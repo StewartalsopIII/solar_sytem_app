@@ -95,7 +95,10 @@ const createSolarSystem = () => {
   // Create the Sun
   const sunGeometry = new THREE.SphereGeometry(planetData.sun.radius * (realScale ? 1 : sizeScale), 32, 32);
   const sunMaterial = new THREE.MeshBasicMaterial({
-    map: loadTexture(planetData.sun.texture)
+    map: loadTexture(planetData.sun.texture),
+    color: 0xffaa00,  // Warm orange-yellow color
+    emissive: 0xff5500,
+    emissiveIntensity: 0.5
   });
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
   celestialBodies.sun = sun;
@@ -114,8 +117,22 @@ const createSolarSystem = () => {
     // Create planet
     const planetSize = planet.radius * (realScale ? 1 : sizeScale);
     const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
+    
+    // Add planet-specific colors based on popular conceptions
+    const planetColor = {
+      mercury: 0x8c8c8c, // Gray
+      venus: 0xe6d498,   // Pale yellow
+      earth: 0x2233ff,   // Blue
+      mars: 0xdd4814,    // Red-orange
+      jupiter: 0xf0bc8f, // Beige with orange tint
+      saturn: 0xf7e9c0,  // Pale gold
+      uranus: 0x5dc8fa,  // Light blue/cyan
+      neptune: 0x0066ff  // Deep blue
+    }[name] || 0xffffff;
+    
     const planetMaterial = new THREE.MeshStandardMaterial({
       map: loadTexture(planet.texture),
+      color: planetColor,
       roughness: 1.0,
     });
     
@@ -147,8 +164,17 @@ const createSolarSystem = () => {
         
         const moonSize = moon.radius * (realScale ? 1 : sizeScale);
         const moonGeometry = new THREE.SphereGeometry(moonSize, 16, 16);
+        
+        // Add moon-specific colors
+        const moonColor = {
+          moon: 0xdddddd,     // Light gray for Earth's moon
+          phobos: 0x8a7059,   // Brownish gray for Phobos
+          deimos: 0x9a8569    // Light brown for Deimos
+        }[moon.name] || 0xcccccc;
+        
         const moonMaterial = new THREE.MeshStandardMaterial({
           map: loadTexture(moon.texture),
+          color: moonColor,
           roughness: 1.0
         });
         
