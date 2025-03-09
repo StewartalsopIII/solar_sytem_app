@@ -11,11 +11,18 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 // Lighting
-const ambientLight = new THREE.AmbientLight(0x333333);
+const ambientLight = new THREE.AmbientLight(0x555555, 1); // Brighter ambient light
 scene.add(ambientLight);
-const sunLight = new THREE.PointLight(0xffffff, 2, 0, 0);
+
+// Strong point light at sun's position
+const sunLight = new THREE.PointLight(0xffffff, 3, 0, 0.5);
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
+
+// Add a directional light to better illuminate planets
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(10, 10, 10);
+scene.add(directionalLight);
 
 // Background stars
 const createStars = () => {
@@ -94,11 +101,12 @@ let simulationSpeed = 0.5;
 const createSolarSystem = () => {
   // Create the Sun
   const sunGeometry = new THREE.SphereGeometry(planetData.sun.radius * (realScale ? 1 : sizeScale), 32, 32);
-  const sunMaterial = new THREE.MeshBasicMaterial({
+  const sunMaterial = new THREE.MeshPhongMaterial({
     map: loadTexture(planetData.sun.texture),
-    color: 0xffaa00,  // Warm orange-yellow color
-    emissive: 0xff5500,
-    emissiveIntensity: 0.5
+    color: 0xffaa00,       // Warm orange-yellow color
+    emissive: 0xff5500,    // Orange-red glow
+    emissiveIntensity: 0.7,
+    shininess: 50
   });
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
   celestialBodies.sun = sun;
@@ -121,19 +129,21 @@ const createSolarSystem = () => {
     // Add planet-specific colors based on popular conceptions
     const planetColor = {
       mercury: 0x8c8c8c, // Gray
-      venus: 0xe6d498,   // Pale yellow
-      earth: 0x2233ff,   // Blue
-      mars: 0xdd4814,    // Red-orange
-      jupiter: 0xf0bc8f, // Beige with orange tint
-      saturn: 0xf7e9c0,  // Pale gold
-      uranus: 0x5dc8fa,  // Light blue/cyan
-      neptune: 0x0066ff  // Deep blue
+      venus: 0xffd700,   // Golden yellow (more saturated)
+      earth: 0x0077ff,   // Bright blue
+      mars: 0xff4500,    // Red-orange (more vibrant)
+      jupiter: 0xffa500, // Orange for the bands
+      saturn: 0xffd700,  // Gold
+      uranus: 0x00ced1,  // Turquoise
+      neptune: 0x0000ff  // Pure blue
     }[name] || 0xffffff;
     
-    const planetMaterial = new THREE.MeshStandardMaterial({
+    const planetMaterial = new THREE.MeshPhongMaterial({
       map: loadTexture(planet.texture),
       color: planetColor,
-      roughness: 1.0,
+      shininess: 25,
+      combine: THREE.MultiplyOperation, // This helps blend the texture and color better
+      specular: 0x222222
     });
     
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
@@ -167,15 +177,17 @@ const createSolarSystem = () => {
         
         // Add moon-specific colors
         const moonColor = {
-          moon: 0xdddddd,     // Light gray for Earth's moon
-          phobos: 0x8a7059,   // Brownish gray for Phobos
-          deimos: 0x9a8569    // Light brown for Deimos
-        }[moon.name] || 0xcccccc;
+          moon: 0xf0f0f0,     // Bright white-gray for Earth's moon
+          phobos: 0xaa6633,   // Stronger brown for Phobos
+          deimos: 0xbb8844    // Stronger tan for Deimos
+        }[moon.name] || 0xdddddd;
         
-        const moonMaterial = new THREE.MeshStandardMaterial({
+        const moonMaterial = new THREE.MeshPhongMaterial({
           map: loadTexture(moon.texture),
           color: moonColor,
-          roughness: 1.0
+          shininess: 15,
+          combine: THREE.MultiplyOperation,
+          specular: 0x111111
         });
         
         const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
