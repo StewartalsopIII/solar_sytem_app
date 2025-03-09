@@ -84,11 +84,28 @@ const createOrbitLine = (radius) => {
   return new THREE.Line(orbitGeometry, orbitMaterial);
 };
 
-// Load textures and create planets
-const loadTexture = (path) => {
-  const texture = new THREE.TextureLoader().load(path);
-  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  return texture;
+// Load textures and create planets with fallback
+const loadTexture = (path, fallbackColor) => {
+  console.log(`Loading texture from: ${path}`);
+  
+  // Try to load texture but have a fallback
+  try {
+    const texture = new THREE.TextureLoader().load(
+      path,
+      function(loadedTexture) {
+        console.log(`Successfully loaded texture: ${path}`);
+        loadedTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      },
+      undefined,
+      function(err) {
+        console.warn(`Texture not found at ${path}, using color only`);
+      }
+    );
+    return texture;
+  } catch (e) {
+    console.warn(`Error setting up texture from ${path}, using color only`);
+    return null;
+  }
 };
 
 // Scale values for easy adjustment
@@ -101,13 +118,18 @@ let simulationSpeed = 0.5;
 const createSolarSystem = () => {
   // Create the Sun
   const sunGeometry = new THREE.SphereGeometry(planetData.sun.radius * (realScale ? 1 : sizeScale), 32, 32);
-  const sunMaterial = new THREE.MeshPhongMaterial({
-    map: loadTexture(planetData.sun.texture),
-    color: 0xffaa00,       // Warm orange-yellow color
-    emissive: 0xff5500,    // Orange-red glow
-    emissiveIntensity: 0.7,
-    shininess: 50
+  
+  // Sun color and material
+  const sunColor = 0xffaa00; // Warm orange-yellow color
+  const sunTexture = loadTexture(planetData.sun.texture);
+  
+  const sunMaterial = new THREE.MeshBasicMaterial({
+    map: sunTexture,
+    color: sunColor,
+    emissive: 0xff5500,
+    emissiveIntensity: 0.7
   });
+  
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
   celestialBodies.sun = sun;
   solarSystem.add(sun);
@@ -126,8 +148,8 @@ const createSolarSystem = () => {
     const planetSize = planet.radius * (realScale ? 1 : sizeScale);
     const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
     
-    // Add planet-specific colors based on popular conceptions
-    const planetColor = {
+    // Define planet-specific colors based on popular conceptions
+    const planetColors = {
       mercury: 0x8c8c8c, // Gray
       venus: 0xffd700,   // Golden yellow (more saturated)
       earth: 0x0077ff,   // Bright blue
@@ -136,15 +158,33 @@ const createSolarSystem = () => {
       saturn: 0xffd700,  // Gold
       uranus: 0x00ced1,  // Turquoise
       neptune: 0x0000ff  // Pure blue
-    }[name] || 0xffffff;
+    };
     
-    const planetMaterial = new THREE.MeshPhongMaterial({
-      map: loadTexture(planet.texture),
-      color: planetColor,
-      shininess: 25,
-      combine: THREE.MultiplyOperation, // This helps blend the texture and color better
-      specular: 0x222222
-    });
+    const planetColor = planetColors[name] || 0xffffff;
+    console.log(`Creating planet: ${name}, color: ${planetColor.toString(16)}`);
+    
+    // Try to load texture
+    const planetTexture = loadTexture(planet.texture);
+    
+    // Create a colored material regardless of texture load success
+    let planetMaterial;
+    
+    // If we're Mercury, Venus, Earth, or Mars, use a MeshStandardMaterial
+    if (['mercury', 'venus', 'earth', 'mars'].includes(name)) {
+      planetMaterial = new THREE.MeshStandardMaterial({
+        map: planetTexture,
+        color: planetColor,
+        roughness: 0.7,
+        metalness: 0.2
+      });
+    } 
+    // For gas giants, use a brighter material
+    else {
+      planetMaterial = new THREE.MeshBasicMaterial({
+        map: planetTexture,
+        color: planetColor,
+      });
+    }
     
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     
@@ -176,18 +216,23 @@ const createSolarSystem = () => {
         const moonGeometry = new THREE.SphereGeometry(moonSize, 16, 16);
         
         // Add moon-specific colors
-        const moonColor = {
+        const moonColors = {
           moon: 0xf0f0f0,     // Bright white-gray for Earth's moon
           phobos: 0xaa6633,   // Stronger brown for Phobos
           deimos: 0xbb8844    // Stronger tan for Deimos
-        }[moon.name] || 0xdddddd;
+        };
         
-        const moonMaterial = new THREE.MeshPhongMaterial({
-          map: loadTexture(moon.texture),
+        const moonColor = moonColors[moon.name] || 0xdddddd;
+        
+        // Try to load texture
+        const moonTexture = loadTexture(moon.texture);
+        
+        // Create a simple material for moons
+        const moonMaterial = new THREE.MeshStandardMaterial({
+          map: moonTexture,
           color: moonColor,
-          shininess: 15,
-          combine: THREE.MultiplyOperation,
-          specular: 0x111111
+          roughness: 0.8,
+          metalness: 0.1
         });
         
         const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
