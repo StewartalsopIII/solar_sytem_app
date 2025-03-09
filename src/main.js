@@ -84,28 +84,11 @@ const createOrbitLine = (radius) => {
   return new THREE.Line(orbitGeometry, orbitMaterial);
 };
 
-// Load textures and create planets with fallback
-const loadTexture = (path, fallbackColor) => {
-  console.log(`Loading texture from: ${path}`);
-  
-  // Try to load texture but have a fallback
-  try {
-    const texture = new THREE.TextureLoader().load(
-      path,
-      function(loadedTexture) {
-        console.log(`Successfully loaded texture: ${path}`);
-        loadedTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      },
-      undefined,
-      function(err) {
-        console.warn(`Texture not found at ${path}, using color only`);
-      }
-    );
-    return texture;
-  } catch (e) {
-    console.warn(`Error setting up texture from ${path}, using color only`);
-    return null;
-  }
+// We're not using textures anymore, so this is just a placeholder
+// If we want to add textures later, we can implement proper texture loading
+const loadTexture = (path) => {
+  // Just return null since we're not using textures
+  return null;
 };
 
 // Scale values for easy adjustment
@@ -116,18 +99,12 @@ let simulationSpeed = 0.5;
 
 // Create solar system
 const createSolarSystem = () => {
-  // Create the Sun
+  // Create the Sun with a VERY simple material
   const sunGeometry = new THREE.SphereGeometry(planetData.sun.radius * (realScale ? 1 : sizeScale), 32, 32);
   
-  // Sun color and material
-  const sunColor = 0xffaa00; // Warm orange-yellow color
-  const sunTexture = loadTexture(planetData.sun.texture);
-  
+  // Simple bright yellow material for the sun - no textures, no complications
   const sunMaterial = new THREE.MeshBasicMaterial({
-    map: sunTexture,
-    color: sunColor,
-    emissive: 0xff5500,
-    emissiveIntensity: 0.7
+    color: 0xffaa00  // Yellow-orange
   });
   
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
@@ -163,28 +140,10 @@ const createSolarSystem = () => {
     const planetColor = planetColors[name] || 0xffffff;
     console.log(`Creating planet: ${name}, color: ${planetColor.toString(16)}`);
     
-    // Try to load texture
-    const planetTexture = loadTexture(planet.texture);
-    
-    // Create a colored material regardless of texture load success
-    let planetMaterial;
-    
-    // If we're Mercury, Venus, Earth, or Mars, use a MeshStandardMaterial
-    if (['mercury', 'venus', 'earth', 'mars'].includes(name)) {
-      planetMaterial = new THREE.MeshStandardMaterial({
-        map: planetTexture,
-        color: planetColor,
-        roughness: 0.7,
-        metalness: 0.2
-      });
-    } 
-    // For gas giants, use a brighter material
-    else {
-      planetMaterial = new THREE.MeshBasicMaterial({
-        map: planetTexture,
-        color: planetColor,
-      });
-    }
+    // Use the absolute simplest material possible - just a basic material with color
+    const planetMaterial = new THREE.MeshBasicMaterial({
+      color: planetColor
+    });
     
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     
@@ -224,15 +183,9 @@ const createSolarSystem = () => {
         
         const moonColor = moonColors[moon.name] || 0xdddddd;
         
-        // Try to load texture
-        const moonTexture = loadTexture(moon.texture);
-        
-        // Create a simple material for moons
-        const moonMaterial = new THREE.MeshStandardMaterial({
-          map: moonTexture,
-          color: moonColor,
-          roughness: 0.8,
-          metalness: 0.1
+        // Just use a simple color with no textures or advanced properties
+        const moonMaterial = new THREE.MeshBasicMaterial({
+          color: moonColor
         });
         
         const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
